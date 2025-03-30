@@ -21,7 +21,7 @@ interface BaseAccountInterface {
 }
 
 interface AccountsTable extends BaseAccountInterface {
-    id: Generated<number>
+    id: Generated<bigint>
     pfp: string
     followers: ColumnType<JSON, string, JSON>,
     timeCreated: ColumnType<Date, number, never>
@@ -40,8 +40,3 @@ interface SaltsTable {
 export type Salt = Selectable<SaltsTable>
 
 // ======== SALTS =========
-
-interface TokensTable {
-    username: string
-    token: string
-}

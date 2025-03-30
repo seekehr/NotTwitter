@@ -5,14 +5,19 @@ import registerRouter from './api/routes/register.js';
 import loginRouter from './api/routes/login.js';
 import * as process from "node:process";
 import * as console from "node:console";
-import isAuth from "./api/middleware/isAuth.js";
+import isAuth from "./api/middleware/auth.js";
 import DatabaseCreator from "./db/DatabaseCreator.js";
 import "dotenv/config";
 import jwt from "jsonwebtoken";
 const dbCreator = new DatabaseCreator();
 let db;
-let accDb;
-let saltsDb;
+export let accDb;
+export let saltsDb;
+export const jwtSecret = process.env["JWT_SECRET"] ?? "";
+if (jwtSecret === "") {
+    console.log("Invalid session secret.");
+    process.exit(1);
+}
 try {
     db = dbCreator.createDb();
     [accDb, saltsDb] = await dbCreator.initDatabase(db);
@@ -21,19 +26,10 @@ catch (error) {
     console.log("Error during DB init: " + error);
     process.exit(1);
 }
-const app = express();
-const secret = process.env["JWT_SECRET"];
-if (typeof (secret) !== 'string') {
-    console.log("Invalid session secret.");
-    process.exit(1);
-}
-const test = jwt.sign("teewqewqewwqewqst", secret);
-console.log(test);
-console.log(Buffer.byteLength(test));
-console.log(Buffer.byteLength(test, 'base64'));
-// TODO: Work on JWT token auth.
+export const app = express();
+const test = jwt.sign("e@".repeat(15), jwtSecret);
+// TODO: Use express-session for browser users.
 app.use('/', indexRouter);
 app.use('/feed', isAuth, usersRouter);
 app.use('/register', registerRouter);
 app.use('/login', loginRouter);
-export default app;

@@ -16,7 +16,7 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
     async init(): Promise<boolean> {
         const TABLE_QUERY = sql`
             CREATE TABLE IF NOT EXISTS accounts (
-                                                    id INT AUTO_INCREMENT PRIMARY KEY,
+                                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                                     username VARCHAR(30) NOT NULL,
                                                     password CHAR(172) NOT NULL,
                                                     displayName VARCHAR(60) NOT NULL,
@@ -34,21 +34,25 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
         }
     }
 
-    async createAccount(account: NewAccount): Promise<bigint | Error> {
+    async createAccount(newAccount: NewAccount): Promise<bigint | Error> {
         try {
             const followers = `{"followers": []}`;
             const timeCreated = Date.now();
+            const account = {
+                username: newAccount.username,
+                password: newAccount.password,
+                displayName: newAccount.displayName,
+                pfp: "./public/images/avatar.png",
+                followers, timeCreated
+            };
             const result = await this.db
-                .insertInto("accounts")
-                .values({
-                    username: account.username,
-                    password: account.password,
-                    displayName: account.displayName,
-                    pfp: "./public/images/avatar.png",
-                    followers, timeCreated
-                })
+                .replaceInto("accounts")
+                .values(account)
                 .executeTakeFirst();
-            return result.insertId ?? new Error("Invalid INSERT ID! Account may still be inserted.");
+            if (typeof(result.insertId) !== "bigint" || result.insertId < 0) {
+                return new Error("Invalid INSERT ID! Account may still be inserted.");
+            }
+            return result.insertId;
         } catch (error) {
             return error instanceof Error ? error : new Error("\n(Invalid error type, creating error...): \n " + String(error));
         }
@@ -70,10 +74,10 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
             .executeTakeFirst();
     }
 
-    async deleteAccount(account: Account): Promise<boolean> {
+    async deleteAccount(id: bigint): Promise<boolean> {
         const result = await this.db
             .deleteFrom("accounts")
-            .where("id", '=', account.id)
+            .where("id", '=', id)
             .executeTakeFirst()
         return result.numDeletedRows > 0;
     }

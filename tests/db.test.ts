@@ -3,8 +3,8 @@ import DatabaseCreator from "../src/db/DatabaseCreator.js";
 import {Kysely} from "kysely";
 import {Database, Salt} from "../src/db/Database.js";
 import SecurityGuard from "../src/db/SecurityGuard.js";
-import AccountsDatabaseManager from "../src/db/managers/AccountsDatabaseManager";
-import SaltsDatabaseManager from "../src/db/managers/SaltsDatabaseManager";
+import AccountsDatabaseManager from "../src/db/managers/AccountsDatabaseManager.js";
+import SaltsDatabaseManager from "../src/db/managers/SaltsDatabaseManager.js";
 import {Account} from "../src/db/Database.js";
 
 const dbc = new DatabaseCreator();
@@ -46,7 +46,7 @@ async function testUserLogin(checkSalt: Salt | Error | undefined, checkHash: str
             }
         } else {
             console.log("Salt does not exist.");
-            const newSalt = await saltsDb.createSalt("seeker");
+            const newSalt = await saltsDb.createSalt("seeker", undefined);
             if(newSalt instanceof Error) {
                 throw new Error(newSalt.message);
             }

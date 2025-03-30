@@ -33,5 +33,40 @@ export default class SecurityGuard {
         decrypted += decipher.final('utf8');
         return decrypted;
     }
+
+    static verifyPassword(password: string): boolean {
+        if (password.length < 8 || password.length > 30) {
+            return false;
+        }
+
+        if (/\s/.test(password)) {
+            return false;
+        }
+
+        if (!/[a-zA-Z]/.test(password)) {
+            return false;
+        }
+
+        if (!/[0-9]/.test(password)) {
+            return false;
+        }
+
+        return /[^a-zA-Z0-9]/.test(password);
+    }
+
+    static verifyName(username: string): boolean {
+        if (username.length === 0 || username.length > 30) {
+            return false;
+        }
+
+        if (/\s/.test(username)) {
+            return false;
+        }
+
+        return /[a-zA-Z]/.test(username);
+    }
 }
+
+
+
 // to save master password

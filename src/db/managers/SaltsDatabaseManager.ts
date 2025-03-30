@@ -1,4 +1,4 @@
-import {Database, Salt} from "../Database.js";
+import {Account, Database, Salt} from "../Database.js";
 import {Kysely, sql} from "kysely";
 import IDatabaseManager from "./IDatabaseManager.js";
 import crypto from "crypto";
@@ -14,7 +14,7 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
         const TABLE_QUERY = sql`
             CREATE TABLE IF NOT EXISTS salts
             (
-                username VARCHAR(30) NOT NULL,
+                username VARCHAR(30) NOT NULL PRIMARY KEY,
                 salt CHAR(172)   NOT NULL
             );`;
 
@@ -27,19 +27,16 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
         }
     }
 
-    async createSalt(username: string): Promise<Salt | Error> {
+    async createSalt(username: string, useSalt: string|undefined): Promise<Salt | Error> {
         try {
-            const salt = Buffer.from(crypto.randomBytes(64)).toString('base64');
-            const result = await this.db
-                .insertInto("salts")
+            const salt = useSalt ?? Buffer.from(crypto.randomBytes(64)).toString('base64');
+            await this.db
+                .replaceInto("salts")
                 .values({
                     username,
                     salt
                 })
                 .executeTakeFirst();
-            if (result.insertId) {
-                return new Error("Invalid INSERT ID! Account may still be inserted.");
-            }
             return {username, salt};
         } catch (error) {
             return error instanceof Error ? error : new Error("\n(Invalid error type, creating error...): \n " + String(error));
@@ -52,6 +49,14 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
             .selectAll()
             .where("username", '=', username)
             .executeTakeFirst() ?? new Error("No salt found for {" + username + "}.")
+    }
+
+    async deleteSalt(username: string): Promise<boolean> {
+        const result = await this.db
+            .deleteFrom("salts")
+            .where("username", '=', username)
+            .executeTakeFirst()
+        return result.numDeletedRows > 0;
     }
 }
 

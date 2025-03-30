@@ -6,6 +6,7 @@ import {createPool} from "mysql2";
 import AccountsDatabaseManager from "./managers/AccountsDatabaseManager.js";
 import SaltsDatabaseManager from "./managers/SaltsDatabaseManager.js";
 import "dotenv/config";
+import {jwtSecret} from "../app.js";
 
 const DB_NAME = "nottwitter";
 const DB_PORT = 3306;

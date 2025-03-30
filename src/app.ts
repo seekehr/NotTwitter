@@ -10,7 +10,7 @@ import * as console from "node:console";
 import session from "express-session";
 import security from "./db/SecurityGuard.js";
 import crypto from "crypto";
-import isAuth from "./api/middleware/isAuth.js";
+import isAuth from "./api/middleware/auth.js";
 import {Database} from "./db/Database.js";
 import {Kysely, MysqlDialect} from "kysely";
 import {createPool} from "mysql2";
@@ -18,11 +18,18 @@ import SaltsDatabaseManager from "./db/managers/SaltsDatabaseManager.js";
 import DatabaseCreator from "./db/DatabaseCreator.js";
 import "dotenv/config";
 import jwt from "jsonwebtoken";
+import cookieParser from 'cookie-parser';
 
 const dbCreator = new DatabaseCreator();
 let db: Kysely<Database>;
-let accDb: AccountsDatabaseManager;
-let saltsDb: SaltsDatabaseManager;
+export let accDb: AccountsDatabaseManager;
+export let saltsDb: SaltsDatabaseManager;
+
+export const jwtSecret = process.env["JWT_SECRET"] ?? "";
+if (jwtSecret === "") {
+    console.log("Invalid session secret.");
+    process.exit(1);
+}
 
 try {
     db = dbCreator.createDb();
@@ -32,23 +39,12 @@ try {
     process.exit(1);
 }
 
-const app = express();
+export const app = express();
+app.use(cookieParser());
 
-const secret = process.env["JWT_SECRET"];
-if (typeof(secret) !== 'string') {
-    console.log("Invalid session secret.")
-    process.exit(1);
-}
+const test = jwt.sign("e@".repeat(15), jwtSecret);
 
-const test = jwt.sign("teewqewqewwqewqst", secret);
-console.log(test);
-console.log(Buffer.byteLength(test));
-console.log(Buffer.byteLength(test, 'base64'));
-
-// TODO: Work on JWT token auth.
 app.use('/', indexRouter);
 app.use('/feed', isAuth, usersRouter);
 app.use('/register', registerRouter);
 app.use('/login', loginRouter);
-
-export default app;
