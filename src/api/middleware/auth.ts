@@ -5,16 +5,18 @@ import {jwtSecret} from "../../app.js";
 export const router = express.Router();
 
 router.get('/', function(req, res, next) {
-    isAuthenticated(req, res, next);
+    if (isAuthenticated(req, res, next)) {
+        next();
+    }
 });
 
-function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
     if ("username" in req.headers && "token" in req.headers) {
         const [username, token] = [req.headers["username"], req.headers["token"]];
         if (typeof(token) === 'string') {
             const decode = jwt.verify(token, jwtSecret);
             if (typeof(decode) === 'string' && username === decode) {
-                next();
+                return true;
             } else {
                 res.status(400).send("Invalid session id (or perhaps it does not match the username)? SessionID: " + JSON.stringify(decode));
             }
@@ -30,7 +32,7 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
                 if (typeof(token) === 'string') {
                     const decode = jwt.verify(token, jwtSecret);
                     if (typeof(decode) === 'string') {
-                        next();
+                        return true;
                     } else {
                         res.status(400).send("Invalid session id (or perhaps it does not match the username)? SessionID: " + JSON.stringify(decode));
                     }
@@ -41,6 +43,5 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
         }
         res.status(400).send("No session id or username given in headers.");
     }
+    return false;
 }
-
-export default router;

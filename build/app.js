@@ -1,14 +1,15 @@
 import express from 'express';
 import indexRouter from './api/routes/index.js';
 import usersRouter from './api/routes/users.js';
-import registerRouter from './api/routes/register.js';
-import loginRouter from './api/routes/login.js';
+import registerRouter from './api/routes/account/register.js';
+import loginRouter from './api/routes/account/login.js';
 import * as process from "node:process";
 import * as console from "node:console";
-import isAuth from "./api/middleware/auth.js";
+import { router as authRouter } from "./api/middleware/auth.js";
 import DatabaseCreator from "./db/DatabaseCreator.js";
 import "dotenv/config";
 import jwt from "jsonwebtoken";
+import cookieParser from 'cookie-parser';
 const dbCreator = new DatabaseCreator();
 let db;
 export let accDb;
@@ -27,9 +28,9 @@ catch (error) {
     process.exit(1);
 }
 export const app = express();
+app.use(cookieParser());
 const test = jwt.sign("e@".repeat(15), jwtSecret);
-// TODO: Use express-session for browser users.
 app.use('/', indexRouter);
-app.use('/feed', isAuth, usersRouter);
+app.use('/feed', authRouter, usersRouter);
 app.use('/register', registerRouter);
 app.use('/login', loginRouter);

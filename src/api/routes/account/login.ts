@@ -1,6 +1,6 @@
 import express from 'express';
-import security from "../../db/SecurityGuard.js";
-import {accDb, jwtSecret, saltsDb} from "../../app.js";
+import security from "../../../db/SecurityGuard.js";
+import {accDb, jwtSecret, saltsDb} from "../../../app.js";
 import jwt from "jsonwebtoken";
 
 export const router = express.Router();

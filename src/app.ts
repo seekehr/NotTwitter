@@ -2,15 +2,15 @@ import express, {response} from 'express';
 
 import indexRouter from './api/routes/index.js';
 import usersRouter from './api/routes/users.js';
-import registerRouter from './api/routes/register.js';
-import loginRouter from './api/routes/login.js';
+import registerRouter from './api/routes/account/register.js';
+import loginRouter from './api/routes/account/login.js';
 import AccountsDatabaseManager from "./db/managers/AccountsDatabaseManager.js";
 import * as process from "node:process";
 import * as console from "node:console";
 import session from "express-session";
 import security from "./db/SecurityGuard.js";
 import crypto from "crypto";
-import isAuth from "./api/middleware/auth.js";
+import {router as authRouter} from "./api/middleware/auth.js";
 import {Database} from "./db/Database.js";
 import {Kysely, MysqlDialect} from "kysely";
 import {createPool} from "mysql2";
@@ -45,6 +45,6 @@ app.use(cookieParser());
 const test = jwt.sign("e@".repeat(15), jwtSecret);
 
 app.use('/', indexRouter);
-app.use('/feed', isAuth, usersRouter);
+app.use('/feed', authRouter, usersRouter);
 app.use('/register', registerRouter);
 app.use('/login', loginRouter);
