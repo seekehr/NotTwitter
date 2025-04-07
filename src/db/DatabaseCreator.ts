@@ -7,6 +7,7 @@ import AccountsDatabaseManager from "./managers/AccountsDatabaseManager.js";
 import SaltsDatabaseManager from "./managers/SaltsDatabaseManager.js";
 import "dotenv/config";
 import {jwtSecret} from "../app.js";
+import PostsDatabaseManager from "./managers/PostsDatabaseManager.js";
 
 const DB_NAME = "nottwitter";
 const DB_PORT = 3306;
@@ -49,10 +50,11 @@ export default class DatabaseCreator {
         }); // mem leak unless i clone it due to the reference to this.db as this class will be initialised once and never-reused
     }
 
-    async initDatabase(db: Kysely<Database>): Promise<[AccountsDatabaseManager, SaltsDatabaseManager]> {
+    async initDatabase(db: Kysely<Database>): Promise<[AccountsDatabaseManager, SaltsDatabaseManager, PostsDatabaseManager]> {
         // TODO: Dynamic loading of managers
         const accDb = new AccountsDatabaseManager(db);
         const saltsDb = new SaltsDatabaseManager(db);
+        const postsDb = new PostsDatabaseManager(db);
         try {
             await Promise.all([
                 accDb.init().then((result) => {
@@ -64,9 +66,14 @@ export default class DatabaseCreator {
                     if (!result) {
                         throw new Error("Salts Database cannot be initialised.");
                     }
+                }),
+                postsDb.init().then((result) => {
+                    if (!result) {
+                        throw new Error("Posts Database cannot be initialised.");
+                    }
                 })
             ]);
-            return [accDb, saltsDb];
+            return [accDb, saltsDb, postsDb];
         } catch (error) {
             throw new Error("Error caught during initialisation: " + error);
         }

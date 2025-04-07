@@ -11,20 +11,20 @@ router.post('/', async function (req, res, next) {
         const [username, password] = [req.headers["username"], req.headers["password"]];
         if (typeof (username) === 'string' && typeof (password) === 'string') {
             if (!security.verifyName(username)) {
-                res.status(400).send("Invalid username (<= 30 characters, only a-z, no spaces)");
+                res.status(400).json({error: "Invalid username (<= 30 characters, only a-z, no spaces)"});
                 return;
             } else if(!security.verifyPassword(password)) {
-                res.status(400).send("Invalid password (8-30 characters, one number, one special character, one letter minimum).");
+                res.status(400).json({error: "Invalid password (8-30 characters, one number, one special character, one letter minimum)."});
                 return;
             }
 
             await loginHandler(username, password, req, res);
         } else {
-            res.status(401).send("Invalid header types.");
+            res.status(401).json({error: "Invalid header types."});
             return;
         }
     } else {
-        res.status(401).send("Header values missing.");
+        res.status(401).json({error: "Header values missing."});
     }
 });
 
@@ -32,7 +32,7 @@ async function loginHandler(username: string, password: string, req: express.Req
     try {
         const saltResult = await saltsDb.getSalt(username);
         if (saltResult instanceof Error) {
-            return res.status(401).send(`Salt not found. Error: ${saltResult.message}`);
+            return res.status(401).json({error: `Salt not found. Error: ${saltResult.message}`});
         }
 
         const hashedPassword = await security.getHash(password, saltResult.salt);
@@ -40,7 +40,7 @@ async function loginHandler(username: string, password: string, req: express.Req
         const account = await accDb.getAccount(username, hashedPassword);
 
         if (!account) {
-            return res.status(401).send("Invalid username or password.");
+            return res.status(401).json({error: "Invalid username or password."});
         }
 
         const tokenResult = jwt.sign(username, jwtSecret);
@@ -56,11 +56,10 @@ async function loginHandler(username: string, password: string, req: express.Req
             });
         }
 
-        return res.status(200).send(`Session ID: ${tokenResult}`);
+        return res.status(200).json({token: tokenResult});
 
     } catch (error) {
-        console.error('Login error: ', error);
-        return res.status(401).send(`Login failed. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(400).json({error: `Login failed. Error: ${error instanceof Error ? error.message : 'Unknown error'}`});
     }
 }
 

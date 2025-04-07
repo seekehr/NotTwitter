@@ -11,7 +11,8 @@ import {
 
 export interface Database {
     accounts: AccountsTable
-    salts: SaltsTable
+    salts: SaltsTable,
+    posts: PostsTable
 }
 
 interface BaseAccountInterface {
@@ -22,7 +23,8 @@ interface BaseAccountInterface {
 
 interface AccountsTable extends BaseAccountInterface {
     id: Generated<bigint>
-    pfp: string
+    pfp: string,
+    posts: ColumnType<JSON, string, JSON>,
     followers: ColumnType<JSON, string, JSON>,
     timeCreated: ColumnType<Date, number, never>
 }
@@ -40,3 +42,28 @@ interface SaltsTable {
 export type Salt = Selectable<SaltsTable>
 
 // ======== SALTS =========
+
+/*  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                                    author_id BIGINT NOT NULL,
+                                                    content VARCHAR(500) NOT NULL,
+                                                    views INT NOT NULL,
+                                                    shares INT NOT NULL,
+                                                    likes INT NOT NULL,
+                                                    usersLiked JSON NOT NULL,
+                                                    timeCreated INT NOT NULL*/
+interface BasePost {
+    author_id: bigint
+    content: string
+}
+
+interface PostsTable extends BasePost {
+    id: Generated<bigint>
+    views: number
+    shares: number
+    likes: number
+    usersLiked: ColumnType<JSON, string, JSON>
+    timeCreated: ColumnType<Date, number, never>
+}
+
+export type NewPost = Insertable<BasePost>
+export type Post = Selectable<PostsTable>

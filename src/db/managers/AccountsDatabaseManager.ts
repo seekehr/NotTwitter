@@ -22,6 +22,7 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
                                                     displayName VARCHAR(60) NOT NULL,
                                                     pfp VARCHAR (1024) NOT NULL,
                                                     followers JSON NOT NULL,
+                                                    posts JSON NOT NULL,
                                                     timeCreated BIGINT NOT NULL
             );`;
 
@@ -34,8 +35,9 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
         }
     }
 
-    async createAccount(newAccount: NewAccount): Promise<bigint | Error> {
+    async createAccount(newAccount: NewAccount): Promise<bigint> {
         try {
+            const posts = `{"posts": []}`;
             const followers = `{"followers": []}`;
             const timeCreated = Date.now();
             const account = {
@@ -43,18 +45,18 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
                 password: newAccount.password,
                 displayName: newAccount.displayName,
                 pfp: "./public/images/avatar.png",
-                followers, timeCreated
+                posts, followers, timeCreated
             };
             const result = await this.db
                 .replaceInto("accounts")
                 .values(account)
                 .executeTakeFirst();
             if (typeof(result.insertId) !== "bigint" || result.insertId < 0) {
-                return new Error("Invalid INSERT ID! Account may still be inserted.");
+                throw new Error("Invalid INSERT ID! Account may still be inserted.");
             }
             return result.insertId;
         } catch (error) {
-            return error instanceof Error ? error : new Error("\n(Invalid error type, creating error...): \n " + String(error));
+            throw error instanceof Error ? error : new Error("\n(Invalid error type, creating error...): \n " + String(error));
         }
     }
 
@@ -71,6 +73,14 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
             .selectFrom("accounts")
             .selectAll()
             .where("username", '=', username).where("password", '=', password)
+            .executeTakeFirst();
+    }
+
+    async getAccountFromID(id: bigint): Promise<Account|undefined> {
+        return await this.db
+            .selectFrom("accounts")
+            .selectAll()
+            .where("id", '=', id)
             .executeTakeFirst();
     }
 

@@ -27,7 +27,7 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
         }
     }
 
-    async createSalt(username: string, useSalt: string|undefined): Promise<Salt | Error> {
+    async createSalt(username: string, useSalt: string|undefined): Promise<Salt> {
         try {
             const salt = useSalt ?? Buffer.from(crypto.randomBytes(64)).toString('base64');
             await this.db
@@ -39,7 +39,7 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
                 .executeTakeFirst();
             return {username, salt};
         } catch (error) {
-            return error instanceof Error ? error : new Error("\n(Invalid error type, creating error...): \n " + String(error));
+            throw error instanceof Error ? error : new Error("\n(Invalid error type, creating error...): \n " + String(error));
         }
     }
 

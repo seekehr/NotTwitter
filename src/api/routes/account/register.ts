@@ -11,23 +11,23 @@ router.post('/', async function(req, res, next) {
         const [username, password, displayName] = [req.headers["username"], req.headers["password"], req.headers["displayname"]];
         if (typeof (username) === 'string' && typeof (password) === 'string' && typeof (displayName) === 'string') {
             if (!security.verifyName(username)) {
-                res.status(400).send("Invalid username (<= 30 characters, only a-z, no spaces)");
+                res.status(400).json({error: "Invalid username (<= 30 characters, only a-z, no spaces)"});
                 return;
             } else if(!security.verifyPassword(password)) {
-                res.status(400).send("Invalid password (8-30 characters, one number, one special character, one letter minimum).");
+                res.status(400).json({error: "Invalid password (8-30 characters, one number, one special character, one letter minimum)."});
                 return;
             } else if (displayName.length > 60) {
-                res.status(400).send("Invalid display name (<= 60 characters)");
+                res.status(400).json({error: "Invalid display name (<= 60 characters)"});
                 return;
             }
 
             await createAccount(username, password, displayName, req, res);
         } else {
-            res.status(401).send("Invalid header types.");
+            res.status(401).json({error: "Invalid header types."});
             return;
         }
     } else {
-        res.status(401).send("Header values missing.");
+        res.status(401).json({error: "Header values missing."});
     }
 });
 
@@ -35,12 +35,9 @@ async function createAccount(username: string, password: string, displayName: st
     try {
         const usernameExists = await accDb.checkUsername(username);
         if (usernameExists) {
-            return res.status(400).send("Username already in use.");
+            return res.status(400).json({error: "Username already in use."});
         }
         const saltResult = await saltsDb.createSalt(username, undefined);
-        if (saltResult instanceof Error) {
-            return res.status(400).send(`Error during creation: ${saltResult.message}`);
-        }
 
         const hashedPassword = await security.getHash(password, saltResult.salt);
         const account = {
@@ -48,14 +45,8 @@ async function createAccount(username: string, password: string, displayName: st
             password: hashedPassword,
             displayName
         };
-        const accountCreationResult = await accDb.createAccount(account);
-
-        if (accountCreationResult instanceof Error) {
-            await saltsDb.deleteSalt(username);
-            return res.status(400).send(`Error during creation of account: ${accountCreationResult.message}`);
-        }
-
-        const tokenResult = jwt.sign(username, jwtSecret);
+       await accDb.createAccount(account);
+       const tokenResult = jwt.sign(username, jwtSecret);
 
         // Save cookie browser
         const acceptHeader = req.headers.accept || "";
@@ -68,11 +59,10 @@ async function createAccount(username: string, password: string, displayName: st
             });
         }
 
-        return res.status(200).send(`Token ID: ${tokenResult}`);
+        return res.status(200).json({token: `Token ID: ${tokenResult}`});
 
-    } catch (error) {
-        console.error('Unexpected error in account creation:', error);
-        return res.status(500).send('Internal server error');
+    } catch (err) {
+        return res.status(400).json({error: err});
     }
 }
 
