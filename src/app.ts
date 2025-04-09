@@ -6,6 +6,7 @@ import registerRouter from './api/routes/account/register.js';
 import loginRouter from './api/routes/account/login.js';
 import postsRouter from './api/routes/post.js';
 import viewPostsRouter from './api/routes/posts.js';
+import verifyEmailRouter from "./api/routes/account/create-token.js";
 import AccountsDatabaseManager from "./db/managers/AccountsDatabaseManager.js";
 import * as process from "node:process";
 import * as console from "node:console";
@@ -23,12 +24,15 @@ import jwt from "jsonwebtoken";
 import cookieParser from 'cookie-parser';
 import PostsDatabaseManager from "./db/managers/PostsDatabaseManager.js";
 import './utils/polyfills.js';
+import VerificationTokensDatabaseManager from "./db/managers/VerificationTokensDatabaseManager.js";
+import RateLimiter from "./api/middleware/ratelimiter.js";
 
 const dbCreator = new DatabaseCreator();
 let db: Kysely<Database>;
 export let accDb: AccountsDatabaseManager;
 export let saltsDb: SaltsDatabaseManager;
 export let postsDb: PostsDatabaseManager;
+export let tokensDb: VerificationTokensDatabaseManager;
 
 export const jwtSecret = process.env["JWT_SECRET"] ?? "";
 if (jwtSecret === "") {
@@ -38,13 +42,14 @@ if (jwtSecret === "") {
 
 try {
     db = dbCreator.createDb();
-    [accDb, saltsDb, postsDb] = await dbCreator.initDatabase(db);
+    [accDb, saltsDb, postsDb, tokensDb] = await dbCreator.initDatabase(db);
 } catch (error) {
     console.log("Error during DB init: " + error);
     process.exit(1);
 }
 
 export const app = express();
+
 app.use(cookieParser());
 app.use(express.json());
 
@@ -54,3 +59,4 @@ app.use('/register', registerRouter);
 app.use('/login', loginRouter);
 app.use('/post', auth, postsRouter);
 app.use('/posts', auth, viewPostsRouter);
+app.use('/verify-email', verifyEmailRouter);

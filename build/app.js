@@ -5,6 +5,7 @@ import registerRouter from './api/routes/account/register.js';
 import loginRouter from './api/routes/account/login.js';
 import postsRouter from './api/routes/post.js';
 import viewPostsRouter from './api/routes/posts.js';
+import verifyEmailRouter from "./api/routes/account/create-token.js";
 import * as process from "node:process";
 import * as console from "node:console";
 import auth from "./api/middleware/auth.js";
@@ -17,6 +18,7 @@ let db;
 export let accDb;
 export let saltsDb;
 export let postsDb;
+export let tokensDb;
 export const jwtSecret = process.env["JWT_SECRET"] ?? "";
 if (jwtSecret === "") {
     console.log("Invalid session secret.");
@@ -24,7 +26,7 @@ if (jwtSecret === "") {
 }
 try {
     db = dbCreator.createDb();
-    [accDb, saltsDb, postsDb] = await dbCreator.initDatabase(db);
+    [accDb, saltsDb, postsDb, tokensDb] = await dbCreator.initDatabase(db);
 }
 catch (error) {
     console.log("Error during DB init: " + error);
@@ -39,3 +41,4 @@ app.use('/register', registerRouter);
 app.use('/login', loginRouter);
 app.use('/post', auth, postsRouter);
 app.use('/posts', auth, viewPostsRouter);
+app.use('/verify-email', verifyEmailRouter);

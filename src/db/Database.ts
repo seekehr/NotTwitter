@@ -13,6 +13,7 @@ export interface Database {
     accounts: AccountsTable
     salts: SaltsTable,
     posts: PostsTable
+    verification_tokens: VerificationTokensTable
 }
 
 interface BaseAccountInterface {
@@ -67,3 +68,10 @@ interface PostsTable extends BasePost {
 
 export type NewPost = Insertable<BasePost>
 export type Post = Selectable<PostsTable>
+
+// ======== POSTS =========
+
+interface VerificationTokensTable {
+    username: string
+    token: string
+}

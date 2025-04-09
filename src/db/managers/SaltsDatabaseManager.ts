@@ -14,8 +14,8 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
         const TABLE_QUERY = sql`
             CREATE TABLE IF NOT EXISTS salts
             (
-                username VARCHAR(30) NOT NULL PRIMARY KEY,
-                salt CHAR(172)   NOT NULL
+                username VARCHAR(30) PRIMARY KEY,
+                salt CHAR(172)       NOT NULL
             );`;
 
         try {
@@ -31,7 +31,7 @@ export default class SaltsDatabaseManager implements IDatabaseManager {
         try {
             const salt = useSalt ?? Buffer.from(crypto.randomBytes(64)).toString('base64');
             await this.db
-                .replaceInto("salts")
+                .insertInto("salts")
                 .values({
                     username,
                     salt

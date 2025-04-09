@@ -6,12 +6,14 @@ import {createPool} from "mysql2";
 import AccountsDatabaseManager from "./managers/AccountsDatabaseManager.js";
 import SaltsDatabaseManager from "./managers/SaltsDatabaseManager.js";
 import "dotenv/config";
-import {jwtSecret} from "../app.js";
 import PostsDatabaseManager from "./managers/PostsDatabaseManager.js";
+import VerificationTokensDatabaseManager from "./managers/VerificationTokensDatabaseManager.js";
+import redis from "redis";
+import {inspect} from "util";
 
 const DB_NAME = "nottwitter";
 const DB_PORT = 3306;
-const DB_HOST = "localhost";
+const DB_HOST = "mysql";
 
 const user = process.env["DB_USER"];
 const password = process.env["DB_PASSWORD"];
@@ -34,27 +36,32 @@ export default class DatabaseCreator {
                 connectionLimit: 10,
             }),
         });
+        console.log(inspect({
+            database: DB_NAME,
+            host: DB_HOST,
+            user: user,
+            password: password,
+            port: DB_PORT,
+            connectionLimit: 10,
+        }));
         return new Kysely<Database>({
-            dialect,
-            /*log(event) {
-                if (event.level === 'query') {
-                    console.log("=======================");
-                    console.log('Query executed:', event.query.sql);
-                    console.log('Parameters:', event.query.parameters);
-                    console.log(`Duration: ${event.queryDurationMillis}ms`);
-                    console.log("=======================");
-                } else if (event.level === 'error') {
-                    console.error('Query error:', event.error);
-                }
-            }*/
-        }); // mem leak unless i clone it due to the reference to this.db as this class will be initialised once and never-reused
+            dialect
+        });
     }
 
-    async initDatabase(db: Kysely<Database>): Promise<[AccountsDatabaseManager, SaltsDatabaseManager, PostsDatabaseManager]> {
+    createRedisDb(): redis.RedisClientType {
+        return redis.createClient({
+            url: `redis://${process.env["REDIS_USER"]}:${process.env["REDIS_PASSWORD"]}@${process.env["REDIS_HOST"]}:${process.env["REDIS_PORT"]}`,
+        });
+    }
+
+    async initDatabase(db: Kysely<Database>): Promise<[AccountsDatabaseManager, SaltsDatabaseManager, PostsDatabaseManager, VerificationTokensDatabaseManager]> {
         // TODO: Dynamic loading of managers
         const accDb = new AccountsDatabaseManager(db);
         const saltsDb = new SaltsDatabaseManager(db);
         const postsDb = new PostsDatabaseManager(db);
+        const tokensDb = new VerificationTokensDatabaseManager(db);
+
         try {
             await Promise.all([
                 accDb.init().then((result) => {
@@ -71,9 +78,14 @@ export default class DatabaseCreator {
                     if (!result) {
                         throw new Error("Posts Database cannot be initialised.");
                     }
-                })
+                }),
+                tokensDb.init().then((result) => {
+                    if (!result) {
+                        throw new Error("Tokens Database cannot be initialised.");
+                    }
+                }),
             ]);
-            return [accDb, saltsDb, postsDb];
+            return [accDb, saltsDb, postsDb, tokensDb];
         } catch (error) {
             throw new Error("Error caught during initialisation: " + error);
         }

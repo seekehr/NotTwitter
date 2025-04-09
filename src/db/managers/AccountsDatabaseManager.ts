@@ -48,7 +48,7 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
                 posts, followers, timeCreated
             };
             const result = await this.db
-                .replaceInto("accounts")
+                .insertInto("accounts")
                 .values(account)
                 .executeTakeFirst();
             if (typeof(result.insertId) !== "bigint" || result.insertId < 0) {
