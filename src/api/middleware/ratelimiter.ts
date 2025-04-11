@@ -1,42 +1,32 @@
 import { rateLimit } from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis'
+import {RedisClientType} from "redis";
 
 export default class RateLimiter {
-    redisStore: RedisStore
+    redisDb: RedisClientType;
 
-    constructor(redisStore: RedisStore) {
-        this.redisStore = redisStore;
+    constructor(redisDb: RedisClientType) {
+        this.redisDb = redisDb;
     }
 
-    getRegisterRateLimit() {
+    /**
+     * Time in minutes, limit(s) per window/time
+     * @param id
+     * @param time
+     * @param limit
+     */
+    getRateLimitMiddleware(id: string, time: number, limit: number) {
         return rateLimit({
-            windowMs: 1440 * (60 * 1000), // 1 day
-            limit: 2, // Limit each IP to 2 requests per `window` (here, per 1 day ).
+            windowMs: time * (60 * 1000), // 1 day
+            limit: limit, // Limit each IP to `limit` requests per `window` (here, per 1 day ).
             standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
             legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-            store: this.redisStore
+            store: new RedisStore({
+                sendCommand: (...args: string[]) => this.redisDb.sendCommand(args),
+                prefix: id
+            }),
+            message: JSON.stringify({error: "Too many requests, please try again later."}),
         });
+        //TODO: Error handling for if redis server goes down unexpectedly; gotta make sure middleware doesnt mess up all routes
     }
-
-    getLoginRateLimit() {
-        return rateLimit({
-            windowMs: 15 * (60 * 1000), // 15m
-            limit: 5, // Limit each IP to 5 requests per `window` (here, per 15m ).
-            standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-            legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-            store: this.redisStore
-        });
-    }
-
-    getPostRateLimit() {
-        return rateLimit({
-            windowMs: 10 * (60 * 1000), // 10m
-            limit: 4, // Limit each IP to 4 requests per `window` (here, per 10m ).
-            standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-            legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-            store: this.redisStore
-        });
-    }
-
-
 }

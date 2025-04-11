@@ -23,11 +23,11 @@ router.post('/', async function(req, res, next) {
 
             await createAccount(username, password, displayName, req, res);
         } else {
-            res.status(401).json({error: "Invalid header types."});
+            res.status(400).json({error: "Invalid header types."});
             return;
         }
     } else {
-        res.status(401).json({error: "Header values missing."});
+        res.status(400).json({error: "Header values missing."});
     }
 });
 
@@ -48,18 +48,7 @@ async function createAccount(username: string, password: string, displayName: st
        await accDb.createAccount(account);
        const tokenResult = jwt.sign(username, jwtSecret);
 
-        // Save cookie browser
-        const acceptHeader = req.headers.accept || "";
-        if (acceptHeader.includes('text/html')) {
-            res.cookie('token', tokenResult, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 20 * 24 * 60 * 60 * 1000, // 20 days in milliseconds
-            });
-        }
-
-        return res.status(200).json({token: `Token ID: ${tokenResult}`});
+        return res.status(200).json({token: tokenResult});
 
     } catch (err) {
         return res.status(400).json({error: err});

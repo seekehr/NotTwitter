@@ -55,7 +55,7 @@ export default class SecurityGuard {
     }
 
     static verifyName(username: string): boolean {
-        if (username.length === 0 || username.length > 30) {
+        if (username.length < 8 || username.length > 30) {
             return false;
         }
 
@@ -63,7 +63,11 @@ export default class SecurityGuard {
             return false;
         }
 
-        return /[a-zA-Z]/.test(username);
+        if (username === 'Loading...' || username === 'trending') {
+            return false;
+        }
+
+        return /^(?!.*[A-Z])(?!.* {2})[a-z0-9_]+$/.test(username);
     }
 }
 

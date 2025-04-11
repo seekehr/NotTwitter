@@ -7,13 +7,12 @@ import AccountsDatabaseManager from "./managers/AccountsDatabaseManager.js";
 import SaltsDatabaseManager from "./managers/SaltsDatabaseManager.js";
 import "dotenv/config";
 import PostsDatabaseManager from "./managers/PostsDatabaseManager.js";
-import VerificationTokensDatabaseManager from "./managers/VerificationTokensDatabaseManager.js";
 import redis from "redis";
 import {inspect} from "util";
 
 const DB_NAME = "nottwitter";
 const DB_PORT = 3306;
-const DB_HOST = "mysql";
+const DB_HOST = "localhost";
 
 const user = process.env["DB_USER"];
 const password = process.env["DB_PASSWORD"];
@@ -36,14 +35,6 @@ export default class DatabaseCreator {
                 connectionLimit: 10,
             }),
         });
-        console.log(inspect({
-            database: DB_NAME,
-            host: DB_HOST,
-            user: user,
-            password: password,
-            port: DB_PORT,
-            connectionLimit: 10,
-        }));
         return new Kysely<Database>({
             dialect
         });
@@ -55,12 +46,11 @@ export default class DatabaseCreator {
         });
     }
 
-    async initDatabase(db: Kysely<Database>): Promise<[AccountsDatabaseManager, SaltsDatabaseManager, PostsDatabaseManager, VerificationTokensDatabaseManager]> {
+    async initDatabase(db: Kysely<Database>): Promise<[AccountsDatabaseManager, SaltsDatabaseManager, PostsDatabaseManager]> {
         // TODO: Dynamic loading of managers
         const accDb = new AccountsDatabaseManager(db);
         const saltsDb = new SaltsDatabaseManager(db);
         const postsDb = new PostsDatabaseManager(db);
-        const tokensDb = new VerificationTokensDatabaseManager(db);
 
         try {
             await Promise.all([
@@ -79,13 +69,8 @@ export default class DatabaseCreator {
                         throw new Error("Posts Database cannot be initialised.");
                     }
                 }),
-                tokensDb.init().then((result) => {
-                    if (!result) {
-                        throw new Error("Tokens Database cannot be initialised.");
-                    }
-                }),
             ]);
-            return [accDb, saltsDb, postsDb, tokensDb];
+            return [accDb, saltsDb, postsDb];
         } catch (error) {
             throw new Error("Error caught during initialisation: " + error);
         }

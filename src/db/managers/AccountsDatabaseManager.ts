@@ -76,6 +76,14 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
             .executeTakeFirst();
     }
 
+    async getAccountFromUsername(username: string): Promise<object|undefined> {
+        return await this.db
+            .selectFrom("accounts")
+            .selectAll()
+            .where("username", '=', username)
+            .executeTakeFirst();
+    }
+
     async getAccountFromID(id: bigint): Promise<Account|undefined> {
         return await this.db
             .selectFrom("accounts")

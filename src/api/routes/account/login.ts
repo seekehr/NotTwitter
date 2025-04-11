@@ -20,11 +20,11 @@ router.post('/', async function (req, res, next) {
 
             await loginHandler(username, password, req, res);
         } else {
-            res.status(401).json({error: "Invalid header types."});
+            res.status(400).json({error: "Invalid header types."});
             return;
         }
     } else {
-        res.status(401).json({error: "Header values missing."});
+        res.status(400).json({error: "Header values missing."});
     }
 });
 
@@ -32,7 +32,7 @@ async function loginHandler(username: string, password: string, req: express.Req
     try {
         const saltResult = await saltsDb.getSalt(username);
         if (saltResult instanceof Error) {
-            return res.status(401).json({error: `Salt not found. Error: ${saltResult.message}`});
+            return res.status(402).json({error: `Salt not found. Error: ${saltResult.message}`});
         }
 
         const hashedPassword = await security.getHash(password, saltResult.salt);
@@ -40,22 +40,10 @@ async function loginHandler(username: string, password: string, req: express.Req
         const account = await accDb.getAccount(username, hashedPassword);
 
         if (!account) {
-            return res.status(401).json({error: "Invalid username or password."});
+            return res.status(402).json({error: "Invalid username or password."});
         }
 
         const tokenResult = jwt.sign(username, jwtSecret);
-
-        // Browser
-        const acceptHeader = req.headers.accept || "";
-        if (acceptHeader.includes('text/html')) {
-            res.cookie('token', tokenResult, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 20 * 24 * 60 * 60 * 1000, // 20 days in milliseconds
-            });
-        }
-
         return res.status(200).json({token: tokenResult});
 
     } catch (error) {
