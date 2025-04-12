@@ -13,7 +13,6 @@ export interface Database {
     accounts: AccountsTable
     salts: SaltsTable,
     posts: PostsTable
-    verification_tokens: VerificationTokensTable
 }
 
 interface BaseAccountInterface {
@@ -55,6 +54,7 @@ export type Salt = Selectable<SaltsTable>
 interface BasePost {
     author_id: bigint
     content: string
+    attachments: ColumnType<JSON, string, JSON>|null
 }
 
 interface PostsTable extends BasePost {
@@ -63,6 +63,7 @@ interface PostsTable extends BasePost {
     shares: number
     likes: number
     usersLiked: ColumnType<JSON, string, JSON>
+    comments: ColumnType<JSON, string, JSON>
     timeCreated: ColumnType<Date, number, never>
 }
 
@@ -70,8 +71,3 @@ export type NewPost = Insertable<BasePost>
 export type Post = Selectable<PostsTable>
 
 // ======== POSTS =========
-
-interface VerificationTokensTable {
-    username: string
-    token: string
-}

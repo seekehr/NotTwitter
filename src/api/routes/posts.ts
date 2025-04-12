@@ -1,18 +1,18 @@
 import express from 'express';
 const router = express.Router();
 import { inspect } from 'util';
-import {postsDb} from "../../app.js";
+import {accDb, postsDb} from "../../app.js";
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
+// TODO: Trending author support
+router.get('/', async function(req, res, next) {
     if ("author" in req.headers) {
         const author = req.headers["author"];
         if (typeof (author) === 'string') {
-            const authorId = BigInt(author);
-            if (authorId >= 0) {
-                postsDb.getPostsFromAuthor(authorId).then((posts) => {
+            const account = await accDb.getAccountFromUsername(author);
+            if (typeof(account) === 'object' && "id" in account && typeof(account.id) === 'number') {
+                postsDb.getPostsFromAuthor(BigInt(account.id)).then((posts) => {
                     if (posts) {
-                        res.status(200).json({posts: inspect(posts)});
+                        res.status(200).json({posts: posts});
                     } else {
                         res.status(404).json({error: "No posts found for this author."});
                         return;
@@ -27,7 +27,7 @@ router.get('/', function(req, res, next) {
         }
     }
 
-    res.status(400).json({error: "You need to specify the author ID."});
+    res.status(400).json({error: "You need to specify the valid author properly."});
 });
 
 export default router;

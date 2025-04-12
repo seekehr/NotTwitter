@@ -51,11 +51,8 @@ async function createAccount(username: string, password: string, displayName: st
         return res.status(200).json({token: tokenResult});
 
     } catch (err) {
-        return res.status(400).json({error: err});
+        return res.status(500).json({error: err instanceof Error ? err.message : 'Unknown error'});
     }
 }
 
-
-
-// TODO: Get signup user / password as URL params and create account
 export default router;

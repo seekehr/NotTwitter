@@ -89,7 +89,7 @@ if (rateLimiter instanceof RateLimiter) {
     app.use('/check-username', rateLimiter.getRateLimitMiddleware("/check-username", 1440, 300 *1000), checkUsernameRouter);
     app.use('/login', rateLimiter.getRateLimitMiddleware("/login" ,10, 5 *1000), loginRouter);
 
-    app.use('/profile', auth, rateLimiter.getRateLimitMiddleware("/profile", 10, 20 *1000), profileRouter);
+    app.use('/profile', rateLimiter.getRateLimitMiddleware("/profile", 10, 20 *1000), profileRouter);
     app.use('/post', auth, rateLimiter.getRateLimitMiddleware("/post", 10, 4 *1000), postsRouter);
     app.use('/posts', rateLimiter.getRateLimitMiddleware("/posts", 10, 4 *1000), viewPostsRouter);
 

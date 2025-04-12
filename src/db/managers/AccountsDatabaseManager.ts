@@ -37,8 +37,8 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
 
     async createAccount(newAccount: NewAccount): Promise<bigint> {
         try {
-            const posts = `{"posts": []}`;
-            const followers = `{"followers": []}`;
+            const posts = JSON.stringify({posts: []});
+            const followers = JSON.stringify({followers: []});
             const timeCreated = Date.now();
             const account = {
                 username: newAccount.username,
@@ -83,6 +83,17 @@ export default class AccountsDatabaseManager implements IDatabaseManager {
             .where("username", '=', username)
             .executeTakeFirst();
     }
+
+    async getIdFromUsername(username: string): Promise<bigint | undefined> {
+        const result = await this.db
+            .selectFrom("accounts")
+            .select("id")
+            .where("username", '=', username)
+            .executeTakeFirst();
+
+        return result?.id;
+    }
+
 
     async getAccountFromID(id: bigint): Promise<Account|undefined> {
         return await this.db

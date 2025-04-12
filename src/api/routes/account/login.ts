@@ -51,5 +51,4 @@ async function loginHandler(username: string, password: string, req: express.Req
     }
 }
 
-// TODO: Get signup user / password as URL params and create account
 export default router;
